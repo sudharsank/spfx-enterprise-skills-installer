@@ -87,11 +87,21 @@ function printSkills() {
 }
 
 function printHosts() {
+  const supportColors = {
+    full: "green",
+    guided: "yellow"
+  };
+
+  const supportBadge = (support) => colorize(`[${support}]`, supportColors[support] || "cyan");
+
+  console.log(emphasize("Supported Hosts"));
+  console.log("Pick the host that matches where you want these skills to live.\n");
+
   listHosts().forEach((host) => {
-    console.log(`${host.id} - ${host.label}`);
-    console.log(`  ${host.description}`);
-    console.log(`  project: ${host.modes.project.support}`);
-    console.log(`  global:  ${host.modes.global.support}`);
+    console.log(styleText(`${host.icon} ${host.id} (${host.label})`, { color: "cyan", bold: true }));
+    console.log(`  ${colorize("◦ Description:", "cyan")} ${host.description}`);
+    console.log(`  ${colorize("◦ Project support:", "cyan")} ${supportBadge(host.modes.project.support)}`);
+    console.log(`  ${colorize("◦ Global support:", "cyan")} ${supportBadge(host.modes.global.support)}`);
     console.log("");
   });
 }

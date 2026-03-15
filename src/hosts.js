@@ -6,6 +6,7 @@ const home = os.homedir();
 export const HOSTS = {
   generic: {
     id: "generic",
+    icon: "🧰",
     label: "Generic workspace",
     description: "Installs directly into a portable skills folder.",
     modes: {
@@ -32,6 +33,7 @@ export const HOSTS = {
   },
   copilot: {
     id: "copilot",
+    icon: "🤖",
     label: "GitHub Copilot / Copilot CLI",
     description: "Stages skills and emits host-specific guidance without claiming unsupported auto-wiring.",
     modes: {
@@ -58,6 +60,7 @@ export const HOSTS = {
   },
   vscode: {
     id: "vscode",
+    icon: "📝",
     label: "VS Code",
     description: "Stages skills for VS Code-based workflows and prints next steps.",
     modes: {
@@ -82,6 +85,7 @@ export const HOSTS = {
   },
   cursor: {
     id: "cursor",
+    icon: "➤",
     label: "Cursor",
     description: "Stages skills for Cursor workflows and prints manual wiring guidance.",
     modes: {
@@ -106,6 +110,7 @@ export const HOSTS = {
   },
   claude: {
     id: "claude",
+    icon: "✳",
     label: "Claude Code",
     description: "Stages skills and emits Claude Code next steps.",
     modes: {
@@ -130,6 +135,7 @@ export const HOSTS = {
   },
   codex: {
     id: "codex",
+    icon: "⚙",
     label: "Codex / Codex CLI",
     description: "Stages skills and prints Codex-friendly usage guidance.",
     modes: {
@@ -154,6 +160,7 @@ export const HOSTS = {
   },
   kiro: {
     id: "kiro",
+    icon: "🪄",
     label: "Kiro",
     description: "Stages skills and prints Kiro-specific next steps.",
     modes: {
@@ -178,6 +185,7 @@ export const HOSTS = {
   },
   antigravity: {
     id: "antigravity",
+    icon: "🛰",
     label: "Antigravity",
     description: "Stages skills for Antigravity-style agent workflows.",
     modes: {
@@ -202,6 +210,7 @@ export const HOSTS = {
   },
   opencode: {
     id: "opencode",
+    icon: "💻",
     label: "Opencode",
     description: "Stages skills and emits Opencode-friendly guidance.",
     modes: {

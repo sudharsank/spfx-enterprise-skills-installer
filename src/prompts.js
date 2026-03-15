@@ -23,11 +23,19 @@ export async function promptForHost() {
 
   const hosts = listHosts();
   const rl = createPrompter();
+  const supportColors = {
+    full: "green",
+    guided: "yellow"
+  };
 
   try {
     console.log("\nSelect the target host:");
     hosts.forEach((host, index) => {
-      console.log(`  ${index + 1}. ${host.id} - ${host.label}`);
+      const projectSupport = colorize(`[project: ${host.modes.project.support}]`, supportColors[host.modes.project.support]);
+      const globalSupport = colorize(`[global: ${host.modes.global.support}]`, supportColors[host.modes.global.support]);
+      console.log(`  ${index + 1}. ${styleText(`${host.icon} ${host.id}`, { color: "cyan", bold: true })} - ${host.label}`);
+      console.log(`     ${host.description}`);
+      console.log(`     ${projectSupport} ${globalSupport}`);
     });
 
     const answer = await rl.question("\nHost number or id: ");
