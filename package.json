@@ -1,0 +1,34 @@
+{
+  "name": "spfx-enterprise-skills-installer",
+  "version": "0.1.0",
+  "description": "Public npx installer for the SPFx Enterprise Skills Pack.",
+  "type": "module",
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "PUBLISHING.md",
+    ".gitignore"
+  ],
+  "bin": {
+    "spfx-enterprise-skills": "./bin/spfx-enterprise-skills.js"
+  },
+  "scripts": {
+    "list:skills": "node ./bin/spfx-enterprise-skills.js --list-skills",
+    "list:hosts": "node ./bin/spfx-enterprise-skills.js --list-hosts"
+  },
+  "keywords": [
+    "spfx",
+    "skills",
+    "copilot",
+    "claude",
+    "cursor",
+    "vscode",
+    "installer",
+    "npx"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,156 @@
+import path from "node:path";
+
+import { getHost, listHosts } from "./hosts.js";
+import { installSkills, printInstallSummary } from "./install.js";
+import { promptForHost, promptForMode, promptForProjectPath, promptForSkillIds } from "./prompts.js";
+import { findSkills, SKILLS, SOURCE_REPOSITORY } from "./skills.js";
+
+function printHelp() {
+  console.log(`SPFx Enterprise Skills installer
+
+Usage:
+  npx spfx-enterprise-skills-installer install [options]
+  npx spfx-enterprise-skills-installer --list-skills
+  npx spfx-enterprise-skills-installer --list-hosts
+
+Options:
+  --host <id>           Target host id
+  --mode <project|global>
+  --project-path <path> Project root for project installs
+  --global-path <path>  Override the default global install root
+  --skills <ids>        Comma-separated skill ids or "all"
+  --source-root <path>  Read skills from a local folder instead of GitHub
+  --source-ref <ref>    Git ref or commit to download from
+  --force               Overwrite conflicting skill files
+  --dry-run             Show what would happen without writing files
+  --yes                 Accept defaults for omitted values when possible
+  --list-skills         Print available skill ids
+  --list-hosts          Print supported hosts and support levels
+  --help                Show this help
+`);
+}
+
+function printSkills() {
+  SKILLS.forEach((skill) => {
+    console.log(`${skill.id}\n  ${skill.description}\n`);
+  });
+}
+
+function printHosts() {
+  listHosts().forEach((host) => {
+    console.log(`${host.id} - ${host.label}`);
+    console.log(`  ${host.description}`);
+    console.log(`  project: ${host.modes.project.support}`);
+    console.log(`  global:  ${host.modes.global.support}`);
+    console.log("");
+  });
+}
+
+function parseArgs(argv) {
+  const parsed = {
+    command: "install",
+    flags: {}
+  };
+
+  const args = [...argv];
+  if (args[0] && !args[0].startsWith("-")) {
+    parsed.command = args.shift();
+  }
+
+  while (args.length > 0) {
+    const token = args.shift();
+
+    switch (token) {
+      case "--host":
+      case "--mode":
+      case "--project-path":
+      case "--global-path":
+      case "--skills":
+      case "--source-root":
+      case "--source-ref":
+        parsed.flags[token.slice(2)] = args.shift();
+        break;
+      case "--force":
+      case "--dry-run":
+      case "--yes":
+      case "--list-skills":
+      case "--list-hosts":
+      case "--help":
+        parsed.flags[token.slice(2)] = true;
+        break;
+      default:
+        throw new Error(`Unknown argument: ${token}`);
+    }
+  }
+
+  return parsed;
+}
+
+async function resolveInstallOptions(flags) {
+  const hostId = flags.host || (flags.yes ? "generic" : await promptForHost());
+  const host = getHost(hostId);
+
+  const mode = flags.mode || (flags.yes ? "project" : await promptForMode());
+  if (!["project", "global"].includes(mode)) {
+    throw new Error(`Unsupported mode: ${mode}`);
+  }
+
+  const projectPath =
+    mode === "project"
+      ? path.resolve(flags["project-path"] || (flags.yes ? process.cwd() : await promptForProjectPath()))
+      : undefined;
+
+  const skillIds = flags.skills
+    ? flags.skills.split(",").map((item) => item.trim()).filter(Boolean)
+    : flags.yes
+      ? ["spfx-enterprise-ux-hub"]
+      : await promptForSkillIds();
+
+  const skills = findSkills(skillIds);
+
+  return {
+    host,
+    hostId,
+    mode,
+    projectPath,
+    globalPath: flags["global-path"],
+    sourceRoot: flags["source-root"] ? path.resolve(flags["source-root"]) : undefined,
+    sourceRef: flags["source-ref"] || SOURCE_REPOSITORY.ref,
+    skills,
+    force: Boolean(flags.force),
+    dryRun: Boolean(flags["dry-run"])
+  };
+}
+
+export async function run(argv) {
+  const parsed = parseArgs(argv);
+  const { command, flags } = parsed;
+
+  if (flags.help || command === "help") {
+    printHelp();
+    return;
+  }
+
+  if (flags["list-skills"]) {
+    printSkills();
+    return;
+  }
+
+  if (flags["list-hosts"]) {
+    printHosts();
+    return;
+  }
+
+  if (command !== "install") {
+    throw new Error(`Unsupported command: ${command}`);
+  }
+
+  const options = await resolveInstallOptions(flags);
+  const summary = await installSkills(options);
+
+  printInstallSummary(summary);
+
+  if (summary.results.conflicts.length > 0 && !options.force) {
+    throw new Error("One or more target files already exist with different content. Re-run with --force to overwrite them.");
+  }
+}
