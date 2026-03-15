@@ -1,9 +1,10 @@
 import path from "node:path";
 
+import { colorize, emphasize, mute, styleText } from "./format.js";
 import { getHost, listHosts } from "./hosts.js";
 import { installSkills, printInstallSummary } from "./install.js";
 import { promptForHost, promptForMode, promptForProjectPath, promptForSkillIds } from "./prompts.js";
-import { findSkills, SKILLS, SOURCE_REPOSITORY } from "./skills.js";
+import { findSkills, SKILL_RECOMMENDATIONS, SKILLS, SOURCE_REPOSITORY } from "./skills.js";
 
 function printHelp() {
   console.log(`SPFx Enterprise Skills installer
@@ -31,9 +32,58 @@ Options:
 }
 
 function printSkills() {
-  SKILLS.forEach((skill) => {
-    console.log(`${skill.id}\n  ${skill.description}\n`);
+  const recommendationColors = {
+    foundation: "green",
+    specialized: "yellow",
+    optional: "magenta"
+  };
+  const recommendationIcons = {
+    foundation: "★",
+    specialized: "◆",
+    optional: "○"
+  };
+
+  console.log(emphasize("SPFx Enterprise Skills Catalog"));
+  console.log("Choose a small starting set based on what your repo actually needs.\n");
+  console.log("🚀 Recommended first install:");
+  console.log("  - spfx-enterprise-ux-hub");
+  console.log("  - plus 1-2 skills that match your project surface area\n");
+  console.log("🎨 Color guide:");
+  Object.entries(SKILL_RECOMMENDATIONS).forEach(([key, metadata]) => {
+    const badge = colorize(`[${recommendationIcons[key]} ${metadata.label}]`, recommendationColors[key]);
+    console.log(`  ${badge} ${metadata.description}`);
   });
+  console.log("");
+
+  ["foundation", "specialized", "optional"].forEach((recommendation) => {
+    const metadata = SKILL_RECOMMENDATIONS[recommendation];
+    const badge = colorize(
+      `[${recommendationIcons[recommendation]} ${metadata.label}]`,
+      recommendationColors[recommendation]
+    );
+    console.log(`${badge} ${metadata.description}`);
+    console.log("");
+
+    SKILLS
+      .filter((skill) => skill.recommendation === recommendation)
+      .forEach((skill) => {
+        const skillColor = recommendationColors[skill.recommendation];
+        const skillIcon = recommendationIcons[skill.recommendation];
+        const heading = `${skillIcon} ${skill.id} (${skill.title})`;
+        const label = (text) => colorize(text, skillColor);
+
+        console.log(styleText(heading, { color: skillColor, bold: true }));
+        console.log(`  ${label("◦ Category:")} ${skill.category}`);
+        console.log(`  ${label("◦ What it covers:")} ${skill.description}`);
+        console.log(`  ${label("◦ Install when:")} ${skill.whenToInstall}`);
+        console.log(`  ${label("◦ Pairs well with:")} ${skill.goodWith.join(", ")}`);
+        console.log("");
+      });
+  });
+
+  console.log("⚡ Install examples:");
+  console.log("  npx spfx-enterprise-skills-installer install --skills spfx-enterprise-ux-hub,spfx-enterprise-code-and-performance");
+  console.log("  npx spfx-enterprise-skills-installer install --skills all");
 }
 
 function printHosts() {

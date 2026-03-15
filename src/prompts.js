@@ -2,7 +2,8 @@ import readline from "node:readline/promises";
 import path from "node:path";
 
 import { listHosts } from "./hosts.js";
-import { SKILLS } from "./skills.js";
+import { colorize, mute, styleText } from "./format.js";
+import { SKILL_RECOMMENDATIONS, SKILLS } from "./skills.js";
 
 function createPrompter() {
   return readline.createInterface({
@@ -74,11 +75,29 @@ export async function promptForSkillIds() {
   requireInteractive("--skills");
 
   const rl = createPrompter();
+  const recommendationColors = {
+    foundation: "green",
+    specialized: "yellow",
+    optional: "magenta"
+  };
+  const recommendationIcons = {
+    foundation: "★",
+    specialized: "◆",
+    optional: "○"
+  };
 
   try {
     console.log("\nAvailable skills:");
     SKILLS.forEach((skill, index) => {
-      console.log(`  ${index + 1}. ${skill.id} - ${skill.description}`);
+      const skillColor = recommendationColors[skill.recommendation];
+      const skillIcon = recommendationIcons[skill.recommendation];
+      const badge = colorize(
+        `[${skillIcon} ${SKILL_RECOMMENDATIONS[skill.recommendation].label}]`,
+        skillColor
+      );
+      console.log(`  ${index + 1}. ${styleText(`${skillIcon} ${skill.id}`, { color: skillColor, bold: true })} ${badge}`);
+      console.log(`     ${colorize(skill.description, skillColor)}`);
+      console.log(`     ${mute(`Install when: ${skill.whenToInstall}`)}`);
     });
     console.log("  all - install every skill");
 

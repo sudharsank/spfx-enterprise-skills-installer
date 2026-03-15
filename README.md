@@ -53,6 +53,13 @@ This keeps v1 honest. The package avoids claiming automatic wiring when a host d
 npx spfx-enterprise-skills-installer --list-skills
 ```
 
+The command prints a richer catalog grouped by recommendation level so users can quickly see:
+
+1. which skills are the best starting point
+2. which ones are situation-specific
+3. which ones are optional or style-driven
+4. what each skill is for and when to install it
+
 ### List hosts
 
 ```bash
