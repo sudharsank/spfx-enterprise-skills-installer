@@ -4,9 +4,13 @@ import path from "node:path";
 import { resolveDestination } from "./hosts.js";
 import { SOURCE_REPOSITORY } from "./skills.js";
 
-function createSkillUrl(skill, sourceRef) {
+function createSkillUrls(skill, sourceRef) {
   const ref = sourceRef || SOURCE_REPOSITORY.ref;
-  return `https://raw.githubusercontent.com/${SOURCE_REPOSITORY.owner}/${SOURCE_REPOSITORY.repo}/${ref}/${skill.repoPath}/SKILL.md`;
+
+  return [
+    `https://raw.githubusercontent.com/${SOURCE_REPOSITORY.owner}/${SOURCE_REPOSITORY.repo}/${ref}/${skill.repoPath}/SKILL.md`,
+    `https://cdn.jsdelivr.net/gh/${SOURCE_REPOSITORY.owner}/${SOURCE_REPOSITORY.repo}@${ref}/${skill.repoPath}/SKILL.md`
+  ];
 }
 
 async function ensureDirectory(directoryPath, dryRun) {
@@ -30,14 +34,54 @@ async function readExistingFile(filePath) {
 }
 
 async function fetchSkillContent(skill, sourceRef) {
-  const url = createSkillUrl(skill, sourceRef);
-  const response = await fetch(url);
+  const urls = createSkillUrls(skill, sourceRef);
+  const failures = [];
 
-  if (!response.ok) {
-    throw new Error(`Failed to download ${skill.id} from ${url} (${response.status})`);
+  for (const url of urls) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+
+    try {
+      const response = await fetch(url, {
+        signal: controller.signal,
+        headers: {
+          Accept: "text/plain",
+          "User-Agent": "spfx-enterprise-skills-installer"
+        }
+      });
+
+      if (!response.ok) {
+        failures.push(`${url} (${response.status} ${response.statusText})`);
+        continue;
+      }
+
+      return await response.text();
+    } catch (error) {
+      const reason =
+        error?.name === "AbortError"
+          ? "request timed out"
+          : error?.cause?.message || error?.message || "unknown network error";
+      failures.push(`${url} (${reason})`);
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 
-  return response.text();
+  const hasCertificateFailure = failures.some((failure) =>
+    failure.toLowerCase().includes("certificate")
+  );
+
+  throw new Error(
+    [
+      `Failed to download ${skill.id} from the configured source repository.`,
+      "Tried:",
+      ...failures.map((failure) => `- ${failure}`),
+      "",
+      hasCertificateFailure
+        ? "Your environment appears to be intercepting TLS certificates. If you use a corporate proxy or custom CA, configure Node trust first (for example with `NODE_EXTRA_CA_CERTS`) or install from a local checkout with `--source-root <path>`."
+        : "If you are behind a firewall or offline, re-run with `--source-root <path>` to install from a local checkout of the skills repository."
+    ].join("\n")
+  );
 }
 
 async function readSkillContentFromLocalRoot(skill, sourceRoot) {
